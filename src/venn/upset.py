@@ -14,6 +14,9 @@ from src.venn.decode_venn_data import decode_venn_data
 
 
 class Upset:
+    """
+    Upset plot.
+    """
     def __init__(self):
         self.set_size_sorted = None
         self.set_size_sorted_index = None
@@ -32,11 +35,11 @@ class Upset:
         decode data to generate venn data
         Args:
             data (dict): the data to generate venn data
-            intersection_sort (bool):
-            intersection_sort_reverse ():
-            set_sort ():
-            set_sort_reverse ():
-            ignore_empty_set (bool):
+            intersection_sort (bool): if sort the intersection set according to the size
+            intersection_sort_reverse (bool): if sort the intersection set in reverse order
+            set_sort (bool): if sort the set according to the size
+            set_sort_reverse (bool): if sort the set in reverse order
+            ignore_empty_set (bool): if ignore the empty set
 
         Returns:
 
@@ -75,6 +78,7 @@ class Upset:
 
     def plot(self, data: dict[str: set],
              figure_size: tuple[float, float] = (10, 6),
+             figure_dpi: float = 100,
              intersection_sort: bool = True,
              intersection_sort_reverse: bool = True,
              set_sort: bool = True,
@@ -85,10 +89,37 @@ class Upset:
              intersection_bar_color: str | Iterable= "black",
              intersection_color: str = "black",
              no_intersections_color: str = "lightgray",
-             ignore_empty_set: bool = True) -> None:
+             ignore_empty_set: bool = True,
+             save_path: str | None = None,
+             intersection_label: str = "Intersection Size",
+             set_size_label: str = "Set Size") -> None:
+        """
+        Plot the upset plot
+        Args:
+            data (dict): the data to generate venn data
+            figure_size (tuple): the size of the figure
+            figure_dpi (float): the dpi of the figure
+            intersection_sort (bool): if sort the intersection set according to the size
+            intersection_sort_reverse (bool): if sort the intersection set in reverse order
+            set_sort (bool): if sort the set according to the size
+            set_sort_reverse (bool): if sort the set in reverse order
+            height_ratios (tuple): the height ratios
+            width_ratios (tuple): the width ratios
+            size_bar_color (str | Iterable): the color of the size bar
+            intersection_bar_color (str | Iterable): the color of the intersection bar
+            intersection_color (str): the color of the intersection
+            no_intersections_color (str): the color of the no intersections
+            ignore_empty_set (bool): if ignore the empty set
+            save_path (str | None): the path to save the figure
+            intersection_label (str): the label of the intersection
+            set_size_label (str): the label of the set size
+        Returns:
 
+        """
+        # decode the data
         self.decode_data(data, intersection_sort, intersection_sort_reverse, set_sort, set_sort_reverse, ignore_empty_set)
 
+        # calculate the width space according to the set label length
         w_space = max([len(s) for s in self.set_size_sorted]) * 0.025 + 0.05
 
         # plot the upset plot-------------------------------------------------------------------------------------------
@@ -126,7 +157,7 @@ class Upset:
         ax_set_size_bar.invert_xaxis()
         ax_set_size_bar.set_yticks([])
 
-        ax_set_size_bar.set_xlabel("Set Size",
+        ax_set_size_bar.set_xlabel(set_size_label,
                                    fontdict={"fontsize": 14,
                                              "family": "Arial",
                                              "weight": "normal", })
@@ -153,7 +184,7 @@ class Upset:
         ax_intersection_bar.set_xticks([])
         ax_intersection_bar.set_xlim(-1, self.intersection_count)
 
-        ax_intersection_bar.set_ylabel("Intersection Size",
+        ax_intersection_bar.set_ylabel(intersection_label,
                                        fontdict={"fontsize": 14,
                                                  "family": "Arial",
                                                  "weight": "normal", })
@@ -183,6 +214,7 @@ class Upset:
         ax_intersection.spines["bottom"].set_visible(False)
         ax_intersection.spines["left"].set_visible(False)
 
+        # add the alternate colors map to the intersection matrix
         alternate_colors = np.zeros((len(self.set_size_sorted), self.intersection_count))
         for i in range(len(self.set_size_sorted)):
             alternate_colors[i, :] = 1 if i % 2 == 0 else 0
@@ -195,12 +227,14 @@ class Upset:
 
         ax_intersection.set_xlim(-1, self.intersection_count)
 
+        if save_path:
+            plt.savefig(save_path, dpi=figure_dpi)
+
         plt.show()
 
 
 if __name__ == '__main__':
-    da = {
-
+    data = {
         "a": {3, 10, 11, 24, 25, 31, 43, 45, 54, 56, 60, 63, 74, 75, 77, 82, 85, 93, 98, 104, 105, 107, 116, 118, 120,
               126,
               135, 153, 162, 163, 169, 178, 183, 185, 200, 206, 221, 230, 232, 233, 234, 236, 240, 251, 253, 254, 262,
@@ -233,43 +267,12 @@ if __name__ == '__main__':
               259, 264, 265, 271, 272, 275, 278, 280, 281, 282, 287, 300, 305, 313, 318, 323, 325, 328, 333, 336, 341,
               343, 345, 23432, 54646, 356, 366, 368, 371, 372, 395, 412, 422, 424, 428, 432, 452, 465, 466, 467, 472,
               356, 366, 368, 371, 372, 395, 412, 422, 424, 428, 432, 452, 465, 466, 467, 472, 480, 487, 493, 498, 500}
-
     }
 
-    import random
-
-
-    def generate_random_groups(num_groups=6, num_range=(0, 1000), group_size_range=(1, 20)):
-        """
-        随机生成指定数量的数字组合。
-
-        :param num_groups: 要生成的数字组合的组数，默认为6
-        :param num_range: 每组数字的范围，默认为 (0, 10000)
-        :param group_size_range: 每组数字数量的范围，默认为 (1, 20)
-        :return: 包含生成结果的列表
-        """
-        groups = []
-        for _ in range(num_groups):
-            group_size = 980 # 随机确定当前组的大小
-            group = random.sample(range(*num_range), group_size)  # 随机生成一组数字
-            groups.append(group)
-        return groups
-
-
-    # 调用函数生成
-    data = {}
-    random_groups = generate_random_groups()
-    for i, group in enumerate(random_groups, 1):
-        data[f"zu_{i}"] = group
-    print(data)
-
-
     us = Upset()
-    us.plot(da, set_sort=True, intersection_sort=True, ignore_empty_set=True,
+    us.plot(data, set_sort=True, intersection_sort=True, ignore_empty_set=True,
             size_bar_color=["#442255", "#CC6677"],
             intersection_bar_color=["#332288", "#88CCEE"],
             intersection_color="#ff8888",
             no_intersections_color="#8888ff"
-            # intersection_bar_color="cyan", size_bar_color='red', intersection_color="blue"
             )
-    print(us.intersections)
